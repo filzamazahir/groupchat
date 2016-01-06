@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dojo Group Chat!</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/styles.css">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script type ="text/javascript" src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+
+                var socket = io.connect();
+                
+                //Prompt function to get user's name (keep going until you get a name)
+                var namePrompt = function namePrompt(){
+                    var name = prompt("Please enter your name:","Your Name");
+                    if (name!= null) { 
+                        console.log ('Name inside function: ', name);
+                        return name; 
+                    }
+                    else { 
+                        namePrompt(); 
+                    }
+                };
+
+                //Have the user enter their name and join convo board
+                var name = namePrompt();
+                console.log('Name global: ', name);
+                $('h4').html('Welcome '+name+'!');
+                socket.emit("user_joined", {name: name});
+
+                //Emit when user enters a message
+                $('form').submit(function(){
+                    socket.emit("message_entered", {
+                        name: name, 
+                        message: $('#message').val()
+                    });
+                    $('#message').val("");
+                    return false;
+                });
+
+                //Add user name to the side when someone joins
+                socket.on('update_user_joined_board', function (data){
+                    $('#user_joined_board').append('<p>'+data.name+' joined!');
+                });
+
+                //Add message to the conversation board when someone messages
+                socket.on('update_conversation_board', function (data){
+                    $('#conversation_board').append('<p><strong>'+data.name+': </strong>'+data.message+'</p>');
+                });
+       
+            });
+
+
+
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Dojo Group Chat!</h1>
+            <h4>Welcome!</h4>
+
+            <div class="rows">
+
+
+                <div class="col-md-9" id="name_box">
+                    <h3>Conversation Board</h3>
+                    <div class="longbox" id="conversation_board">
+                        <% for (i in messages) { %>
+                            <% if (messages[i]) { %>
+                                <p><strong><%=messages[i].name %>: </strong><%=messages[i].message %></p>
+                            <% } %>
+                        <% } %>
+                    </div>
+
+                    <form> 
+                        <div class="form-group">
+             
+                        <input type="text" name="message" id="message" class="form-control">
+                        </div>
+                        <button class="btn btn-primary pull-right" type="submit">Send</button>
+                    </form>             
+                </div>
+
+
+                <div class="col-md-2 col-md-offset-1">
+                    <h3>Users here</h3>
+                    <div class = "longbox" id="user_joined_board">
+                        <% for (j in users) { %>
+                            <% if (users[j]) { %>
+                                <p><%=users[j] %> joined!</p>   
+                            <% } %>
+                        <% } %>
+
+                    </div>
+                </div>
+
+
+            </div>
+
+        </div>
+    </body>
+</html>
